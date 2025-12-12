@@ -23,6 +23,11 @@
 
   # Logs
   *.log
+# Test artifacts
+hello.txt
+test_tool_output.txt
+*.txt.test
+
 # Claude Code
 .claude/
 CLAUDE.md

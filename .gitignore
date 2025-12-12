@@ -1,0 +1,27 @@
+ Virtual environment
+  venv/
+  env/
+
+  # Environment variables (contains API keys!)
+  .env
+
+  # Python cache
+  __pycache__/
+  *.pyc
+  *.pyo
+  *.pyd
+
+  # IDE
+  .vscode/
+  .idea/
+  *.swp
+  *.swo
+
+  # OS
+  .DS_Store
+  Thumbs.db
+
+  # Logs
+  *.log
+# Claude Code
+.claude/

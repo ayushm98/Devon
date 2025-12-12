@@ -25,3 +25,5 @@
   *.log
 # Claude Code
 .claude/
+CLAUDE.md
+devon-project-plan.md

@@ -3,7 +3,7 @@ Tool Registry
 Maps tool names to their implementations and schemas
 """
 
-from codepilot.tools.file_tools import read_file, write_file, run_command
+from codepilot.tools.file_tools import read_file, write_file, run_command, search_code, list_files, git_status
 from typing import Callable, List, Dict, Optional
 
 
@@ -63,6 +63,68 @@ TOOLS = [
                 "required": ["command"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_code",
+            "description": "Search for a text pattern in code files (like grep). Use this to find where functions, classes, or text appears in the codebase.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pattern": {
+                        "type": "string",
+                        "description": "The text pattern to search for"
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Directory to search in (default: current directory)"
+                    },
+                    "file_extension": {
+                        "type": "string",
+                        "description": "Optional file extension filter (e.g., 'py', 'js')"
+                    }
+                },
+                "required": ["pattern"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_files",
+            "description": "List files and directories in a path. Use this to explore the project structure or find files.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Directory path to list (default: current directory)"
+                    },
+                    "pattern": {
+                        "type": "string",
+                        "description": "Optional glob pattern to filter files (e.g., '*.py', 'test_*')"
+                    },
+                    "show_hidden": {
+                        "type": "boolean",
+                        "description": "Whether to show hidden files (default: false)"
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "git_status",
+            "description": "Get the git repository status. Use this to see what files have been modified, added, or deleted.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
     }
 ]
 
@@ -71,7 +133,10 @@ TOOLS = [
 TOOL_FUNCTIONS = {
     "read_file": read_file,
     "write_file": write_file,
-    "run_command": run_command
+    "run_command": run_command,
+    "search_code": search_code,
+    "list_files": list_files,
+    "git_status": git_status
 }
 
 

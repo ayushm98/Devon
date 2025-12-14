@@ -3,3 +3,9 @@ e2b-code-interpreter>=2.4.0
 python-dotenv>=1.2.0
 langchain>=0.3.0
 langgraph>=0.2.0
+
+# Hybrid Retrieval (Context Engineering)
+sentence-transformers>=2.2.0  # For generating text embeddings
+chromadb>=0.4.0               # Vector database for semantic search
+rank-bm25>=0.2.2              # BM25 algorithm for keyword search
+networkx>=3.0                 # Already used for dependency graphs

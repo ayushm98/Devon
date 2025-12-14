@@ -9,3 +9,6 @@ sentence-transformers>=2.2.0  # For generating text embeddings
 chromadb>=0.4.0               # Vector database for semantic search
 rank-bm25>=0.2.2              # BM25 algorithm for keyword search
 networkx>=3.0                 # Already used for dependency graphs
+
+# Chainlit UI (Phase 5)
+chainlit>=1.0.0               # Chat UI framework for AI agents

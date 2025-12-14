@@ -57,7 +57,7 @@ class PlannerAgent:
     - Single responsibility (planning only)
     """
 
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "gpt-3.5-turbo"):
         """
         Initialize Planner agent.
 

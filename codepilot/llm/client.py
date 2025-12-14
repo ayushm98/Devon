@@ -14,12 +14,12 @@ load_dotenv()
 class OpenAIClient:
     """Wrapper for OpenAI API calls"""
 
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "gpt-3.5-turbo"):
         """
         Initialize OpenAI client
 
         Args:
-            model: OpenAI model to use (default: gpt-4)
+            model: OpenAI model to use (default: gpt-3.5-turbo)
         """
         self.api_key = os.getenv('OPENAI_API_KEY')
 

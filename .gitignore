@@ -28,6 +28,10 @@ hello.txt
 test_tool_output.txt
 *.txt.test
 
+# Generated test files and examples
+manual_tests/
+examples/
+
 # Claude Code
 .claude/
 CLAUDE.md

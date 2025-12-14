@@ -74,7 +74,7 @@ class ReviewerAgent:
     - Single responsibility (review only)
     """
 
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "gpt-3.5-turbo"):
         """
         Initialize Reviewer agent.
 

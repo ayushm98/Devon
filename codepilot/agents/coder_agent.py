@@ -72,7 +72,7 @@ class CoderAgent:
     - Single responsibility (implementation only)
     """
 
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "gpt-3.5-turbo"):
         """
         Initialize Coder agent.
 

@@ -12,7 +12,7 @@ from codepilot.tools.registry import get_tools, get_tool_function
 class Agent:
     """Main agent that executes tasks using LLM and tools"""
 
-    def __init__(self, model: str = "gpt-4", max_iterations: int = 10):
+    def __init__(self, model: str = "gpt-3.5-turbo", max_iterations: int = 10):
         """
         Initialize the agent
 

@@ -1,0 +1,21 @@
+[project]
+# Enable or disable public access (set to false for production)
+enable_telemetry = false
+public = false
+
+# Session configuration
+session_timeout = 3600
+cache_dir = ".chainlit/.files"
+
+[UI]
+name = "CodePilot"
+description = "Autonomous AI Coding Agent"
+github = "https://github.com/ayushm98/Devon"
+default_theme = "dark"
+custom_css = ""
+
+[features]
+# Enable or disable features
+unsafe_allow_html = false
+latex = false
+multi_modal = false

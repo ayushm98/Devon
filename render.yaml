@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: codepilot
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: chainlit run chainlit_app.py --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: E2B_API_KEY
+        sync: false
+      - key: CHAINLIT_PASSWORD
+        generateValue: true
+      - key: CHAINLIT_URL
+        value: https://codepilot.onrender.com
+    healthCheckPath: /health

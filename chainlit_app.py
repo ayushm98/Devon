@@ -20,6 +20,25 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 
+@cl.password_auth_callback
+def auth_callback(username: str, password: str):
+    """
+    Simple password authentication for CodePilot.
+
+    For production, use environment variables and proper password hashing.
+    """
+    # Get password from environment variable (more secure)
+    required_password = os.getenv('CHAINLIT_PASSWORD', 'codepilot2024')
+
+    # In production, you should hash passwords and use a proper auth system
+    if password == required_password:
+        return cl.User(
+            identifier=username,
+            metadata={"role": "user", "provider": "credentials"}
+        )
+    return None
+
+
 @cl.on_chat_start
 async def start():
     """Initialize the agent system when chat starts."""
@@ -86,8 +105,15 @@ async def main(message: cl.Message):
 
         def run_orchestrator():
             """Run orchestrator in thread and capture output."""
-            with redirect_stdout(captured_output), redirect_stderr(captured_output):
-                return orchestrator.run(message.content)
+            try:
+                with redirect_stdout(captured_output), redirect_stderr(captured_output):
+                    return orchestrator.run(message.content)
+            except Exception as e:
+                # Capture any exceptions from orchestrator
+                print(f"❌ Error in orchestrator: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                raise
 
         # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
@@ -204,9 +230,92 @@ async def main(message: cl.Message):
         await cl.Message(content="\n".join(summary_lines)).send()
 
     except Exception as e:
-        await cl.Message(
-            content=f"## ❌ Error\n\n```\n{str(e)}\n```\n\nPlease try again or rephrase your request."
-        ).send()
+        # Determine error type and provide specific guidance
+        error_message = str(e)
+        error_type = type(e).__name__
+
+        if "rate_limit" in error_message.lower() or "429" in error_message:
+            user_message = f"""## ⏱️ Rate Limit Reached
+
+OpenAI API rate limit exceeded. This happens when too many requests are made in a short time.
+
+**What to do:**
+- Wait a few minutes and try again
+- Reduce max_iterations (currently: {orchestrator.max_iterations})
+- Your request will work once the rate limit resets
+
+**Error details:**
+```
+{error_message}
+```
+"""
+        elif "insufficient_quota" in error_message.lower():
+            user_message = f"""## 💳 API Credits Exhausted
+
+Your OpenAI API credits have been exhausted.
+
+**What to do:**
+- Add credits to your OpenAI account at https://platform.openai.com/account/billing
+- Check your usage at https://platform.openai.com/usage
+- Current model: GPT-3.5-turbo (~$0.02 per task)
+
+**Error details:**
+```
+{error_message}
+```
+"""
+        elif "api_key" in error_message.lower() or "authentication" in error_message.lower():
+            user_message = f"""## 🔑 API Key Error
+
+There's an issue with your OpenAI API key.
+
+**What to do:**
+- Verify your OPENAI_API_KEY in .env file
+- Check that the key is valid at https://platform.openai.com/api-keys
+- Restart the application after updating .env
+
+**Error details:**
+```
+{error_message}
+```
+"""
+        elif "timeout" in error_message.lower():
+            user_message = f"""## ⏰ Request Timeout
+
+The operation took too long and timed out.
+
+**What to do:**
+- Try again with a simpler task
+- The task may be too complex for one iteration
+- Consider breaking it into smaller steps
+
+**Error details:**
+```
+{error_message}
+```
+"""
+        else:
+            # Generic error with helpful context
+            user_message = f"""## ❌ Error Occurred
+
+An unexpected error occurred during execution.
+
+**Error type:** {error_type}
+
+**What to do:**
+- Try rephrasing your request
+- Check if all required files/dependencies exist
+- Verify your .env file has all required API keys
+
+**Error details:**
+```
+{error_message}
+```
+
+If this persists, please report the issue with the error details above.
+"""
+
+        await cl.Message(content=user_message).send()
 
 
 if __name__ == "__main__":

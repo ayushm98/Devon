@@ -4,6 +4,7 @@ Maps tool names to their implementations and schemas
 """
 
 from codepilot.tools.file_tools import read_file, write_file, run_command, search_code, list_files, git_status
+from codepilot.tools.context_tools import search_codebase, index_codebase
 from typing import Callable, List, Dict, Optional
 
 
@@ -125,6 +126,28 @@ TOOLS = [
                 "required": []
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_codebase",
+            "description": "Search the codebase using hybrid retrieval (combines keyword matching with semantic search). More powerful than search_code - finds both exact matches AND semantically related code. Use this when looking for specific functionality, patterns, or concepts in the codebase.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "What to search for. Can be natural language (e.g., 'authentication logic', 'error handling') or specific terms (e.g., 'login function', 'database connection')"
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "description": "Number of results to return (default: 5, max: 20)",
+                        "default": 5
+                    }
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]
 
@@ -136,7 +159,9 @@ TOOL_FUNCTIONS = {
     "run_command": run_command,
     "search_code": search_code,
     "list_files": list_files,
-    "git_status": git_status
+    "git_status": git_status,
+    "search_codebase": search_codebase,
+    "index_codebase": index_codebase
 }
 
 

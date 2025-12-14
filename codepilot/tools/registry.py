@@ -5,6 +5,13 @@ Maps tool names to their implementations and schemas
 
 from codepilot.tools.file_tools import read_file, write_file, run_command, search_code, list_files, git_status
 from codepilot.tools.context_tools import search_codebase, index_codebase
+from codepilot.sandbox.sandbox_tools import (
+    create_sandbox,
+    close_sandbox,
+    upload_to_sandbox,
+    execute_in_sandbox,
+    run_command_in_sandbox
+)
 from typing import Callable, List, Dict, Optional
 
 
@@ -148,6 +155,61 @@ TOOLS = [
                 "required": ["query"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "upload_to_sandbox",
+            "description": "Upload a file to the E2B sandbox for safe execution. Use this BEFORE running code to ensure the file exists in the sandbox environment.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "File path in sandbox (e.g., 'test.py', 'utils/helper.py')"
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "File content to upload"
+                    }
+                },
+                "required": ["path", "content"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "run_command_in_sandbox",
+            "description": "Run a shell command in the isolated E2B sandbox. Use this to safely execute code, run tests, or perform system operations without affecting the host system. Examples: 'python test.py', 'pytest', 'npm test'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "Shell command to execute in sandbox"
+                    }
+                },
+                "required": ["command"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "execute_in_sandbox",
+            "description": "Execute Python code directly in the E2B sandbox. Use for quick code testing or running Python snippets without creating files.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "Python code to execute"
+                    }
+                },
+                "required": ["code"]
+            }
+        }
     }
 ]
 
@@ -161,7 +223,10 @@ TOOL_FUNCTIONS = {
     "list_files": list_files,
     "git_status": git_status,
     "search_codebase": search_codebase,
-    "index_codebase": index_codebase
+    "index_codebase": index_codebase,
+    "upload_to_sandbox": upload_to_sandbox,
+    "execute_in_sandbox": execute_in_sandbox,
+    "run_command_in_sandbox": run_command_in_sandbox
 }
 
 

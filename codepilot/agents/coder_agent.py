@@ -50,8 +50,15 @@ Tools available to you:
 - read_file: Understand current implementation
 - write_file: Create or modify files
 - list_files: Explore directory structure
+- upload_to_sandbox: Upload files to isolated testing environment
+- run_command_in_sandbox: Run commands safely in sandbox (e.g., pytest, python test.py)
+- execute_in_sandbox: Execute Python code snippets for quick testing
 
-You do NOT have run_command - you only write code, not execute it.
+IMPORTANT: Always test your code in the sandbox before submitting!
+1. Write the file locally (write_file)
+2. Upload to sandbox (upload_to_sandbox)
+3. Run tests in sandbox (run_command_in_sandbox)
+4. Fix any issues before marking as complete
 """
 
 
@@ -75,12 +82,15 @@ class CoderAgent:
         self.client = OpenAIClient(model=model)
         self.conversation = ConversationManager()
 
-        # Coder gets read + write tools (but not run_command)
+        # Coder gets read + write tools + sandbox execution (safe testing)
         self.allowed_tools = [
             "search_codebase",
             "read_file",
             "write_file",
-            "list_files"
+            "list_files",
+            "upload_to_sandbox",
+            "run_command_in_sandbox",
+            "execute_in_sandbox"
         ]
 
     def run(self, plan: str, task: str, review_feedback: str = None) -> Dict[str, str]:

@@ -13,6 +13,20 @@ class ConversationManager:
         """Initialize with empty message history"""
         self.messages: List[Dict[str, Any]] = []
 
+    def add_message(self, role: str, content: str, tool_calls=None):
+        """
+        Generic method to add any message to conversation.
+
+        Args:
+            role: Message role ("system", "user", "assistant", "tool")
+            content: Message content
+            tool_calls: Optional tool calls for assistant messages
+        """
+        message = {"role": role, "content": content}
+        if tool_calls:
+            message["tool_calls"] = tool_calls
+        self.messages.append(message)
+
     def add_user_message(self, content: str):
         """
         Add a user message to the conversation

@@ -154,16 +154,24 @@ async def main(message: cl.Message):
             cl.user_session.set("repo_path", repo_path)
             cl.user_session.set("repo_info", repo_info)
 
-            # Create context for the task
+            # Create context for the task (limited to avoid token overflow)
             languages = ", ".join(repo_info["languages"][:5]) if repo_info["languages"] else "Unknown"
+            # Only include first 20 files to keep context small
+            sample_files = repo_info["files"][:20] if repo_info["files"] else []
+            files_preview = "\n".join(f"  - {f}" for f in sample_files)
+            if len(repo_info["files"]) > 20:
+                files_preview += f"\n  ... and {len(repo_info['files']) - 20} more files"
+
             task_context = f"""
 [REPOSITORY CONTEXT]
 Repository: {repo_name}
 Path: {repo_path}
 Total Files: {repo_info['total_files']}
 Languages: {languages}
+Sample Files:
+{files_preview}
 
-The user wants to work with this repository. Use the path above when reading/writing files.
+IMPORTANT: Use the read_file tool with the full path (e.g., {repo_path}/filename.py) to read files.
 """
             # Update clone message
             clone_msg.content = f"**Repository cloned successfully!**\n\n" \
@@ -193,7 +201,7 @@ Path: {repo_path}
 Total Files: {repo_info['total_files']}
 Languages: {languages}
 
-The user is working with this repository. Use the path above when reading/writing files.
+IMPORTANT: Use the read_file tool with the full path (e.g., {repo_path}/filename.py) to read files.
 """
 
     # Prepare the full task with context

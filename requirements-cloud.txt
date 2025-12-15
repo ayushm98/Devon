@@ -1,0 +1,22 @@
+# Cloud deployment requirements (lightweight - no PyTorch/sentence-transformers)
+# These are only the essential packages needed for HuggingFace Spaces
+
+# Core
+openai>=1.0.0
+python-dotenv>=1.2.0
+
+# E2B Sandbox
+e2b-code-interpreter>=2.4.0
+
+# LangChain (minimal)
+langchain>=0.3.0
+langgraph>=0.2.0
+
+# Lightweight search (no embeddings in cloud mode)
+rank-bm25>=0.2.2
+
+# Chainlit UI
+chainlit>=1.0.0
+
+# For dependency graphs
+networkx>=3.0

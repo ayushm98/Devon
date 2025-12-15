@@ -1,0 +1,46 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment files (secrets)
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Cache directories
+.codepilot_cache/
+.cache/
+.chroma/
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Documentation (not needed in container)
+*.md
+!README.md
+docs/
+
+# Misc
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

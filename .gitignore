@@ -1,28 +1,29 @@
- # Virtual environment
-  venv/
-  env/
+# Virtual environment
+venv/
+env/
 
-  # Environment variables (contains API keys!)
-  .env
+# Environment variables (contains API keys!)
+.env
 
-  # Python cache
-  __pycache__/
-  *.pyc
-  *.pyo
-  *.pyd
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-  # IDE
-  .vscode/
-  .idea/
-  *.swp
-  *.swo
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
-  # OS
-  .DS_Store
-  Thumbs.db
+# OS
+.DS_Store
+Thumbs.db
 
-  # Logs
-  *.log
+# Logs
+*.log
+
 # Test artifacts
 hello.txt
 test_tool_output.txt
@@ -42,3 +43,10 @@ devon-project-plan.md
 
 # CodePilot cache
 .codepilot_cache/
+
+# Temp files
+*.tmp
+*.bak
+
+# ChromaDB
+.chroma/

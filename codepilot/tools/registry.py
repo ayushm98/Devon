@@ -15,7 +15,8 @@ from codepilot.sandbox.sandbox_tools import (
 from typing import Callable, List, Dict, Optional
 
 # Check if running in production BEFORE importing heavy ML dependencies
-_IS_PRODUCTION = os.getenv('RENDER_SERVICE_NAME') or os.getenv('RENDER') or os.getenv('PORT')
+# Detects: Render, HuggingFace Spaces, or any cloud with PORT env var
+_IS_PRODUCTION = os.getenv('RENDER_SERVICE_NAME') or os.getenv('RENDER') or os.getenv('SPACE_ID') or os.getenv('PORT')
 
 # Only import heavy context_tools (sentence-transformers, torch) in local development
 if not _IS_PRODUCTION:

@@ -18,7 +18,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 # Check if running in production BEFORE importing heavy dependencies
-IS_PRODUCTION = os.getenv('RENDER_SERVICE_NAME') or os.getenv('RENDER') or os.getenv('PORT')
+# Detects: Render, HuggingFace Spaces, or any cloud with PORT env var
+IS_PRODUCTION = os.getenv('RENDER_SERVICE_NAME') or os.getenv('RENDER') or os.getenv('SPACE_ID') or os.getenv('PORT')
 
 # Only import heavy ML dependencies in local development
 if not IS_PRODUCTION:

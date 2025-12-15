@@ -3,8 +3,8 @@ Tool Registry
 Maps tool names to their implementations and schemas
 """
 
+import os
 from codepilot.tools.file_tools import read_file, write_file, run_command, search_code, list_files, git_status
-from codepilot.tools.context_tools import search_codebase, index_codebase
 from codepilot.sandbox.sandbox_tools import (
     create_sandbox,
     close_sandbox,
@@ -13,6 +13,20 @@ from codepilot.sandbox.sandbox_tools import (
     run_command_in_sandbox
 )
 from typing import Callable, List, Dict, Optional
+
+# Check if running in production BEFORE importing heavy ML dependencies
+_IS_PRODUCTION = os.getenv('RENDER_SERVICE_NAME') or os.getenv('RENDER') or os.getenv('PORT')
+
+# Only import heavy context_tools (sentence-transformers, torch) in local development
+if not _IS_PRODUCTION:
+    from codepilot.tools.context_tools import search_codebase, index_codebase
+else:
+    # Provide stub functions for production to avoid import errors
+    def search_codebase(query: str, top_k: int = 5) -> str:
+        return "⚠️ Codebase search is disabled in cloud mode (resource constraints)"
+
+    def index_codebase(root_path: str) -> str:
+        return "⚠️ Codebase indexing is disabled in cloud mode (resource constraints)"
 
 
 # Tool schemas for OpenAI function calling

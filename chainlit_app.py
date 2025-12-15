@@ -10,14 +10,22 @@ User can see every step in real-time.
 """
 
 import chainlit as cl
-from codepilot.agents.orchestrator import Orchestrator
-from codepilot.tools.context_tools import index_codebase
 import os
 import sys
 import io
 from contextlib import redirect_stdout, redirect_stderr
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+
+# Check if running in production BEFORE importing heavy dependencies
+IS_PRODUCTION = os.getenv('RENDER_SERVICE_NAME') or os.getenv('RENDER') or os.getenv('PORT')
+
+# Only import heavy ML dependencies in local development
+if not IS_PRODUCTION:
+    from codepilot.tools.context_tools import index_codebase
+
+# Import orchestrator (lighter weight)
+from codepilot.agents.orchestrator import Orchestrator
 
 
 @cl.password_auth_callback
@@ -62,10 +70,8 @@ async def start():
 
     print("[CHAINLIT] Welcome message sent")  # Debug log
 
-    # Skip indexing on deployment to avoid startup issues
-    # Check for Render-specific environment variables or production mode
-    is_production = os.getenv('RENDER_SERVICE_NAME') or os.getenv('RENDER') or os.getenv('PORT')
-    if is_production:
+    # Skip indexing on deployment to avoid startup issues (using module-level constant)
+    if IS_PRODUCTION:
         print(f"[CHAINLIT] Running in production mode (PORT={os.getenv('PORT')}) - skipping codebase indexing")
         await cl.Message(content="ℹ️ Running in cloud mode - codebase indexing disabled").send()
         cl.user_session.set("orchestrator", Orchestrator(max_iterations=3))

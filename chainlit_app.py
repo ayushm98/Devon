@@ -43,6 +43,8 @@ def auth_callback(username: str, password: str):
 async def start():
     """Initialize the agent system when chat starts."""
 
+    print("[CHAINLIT] on_chat_start triggered")  # Debug log
+
     await cl.Message(
         content="# 🤖 CodePilot - Autonomous AI Coding Agent\n\n"
                 "I can help you write code, fix bugs, and implement features!\n\n"
@@ -58,7 +60,18 @@ async def start():
                 "**Ready!** What would you like me to build?"
     ).send()
 
-    # Index codebase in background
+    print("[CHAINLIT] Welcome message sent")  # Debug log
+
+    # Skip indexing on deployment to avoid startup issues
+    if os.getenv('RENDER'):
+        print("[CHAINLIT] Running on Render - skipping codebase indexing")
+        await cl.Message(content="ℹ️ Running in cloud mode - codebase indexing disabled").send()
+        cl.user_session.set("orchestrator", Orchestrator(max_iterations=3))
+        cl.user_session.set("ready", True)
+        print("[CHAINLIT] Orchestrator created, ready=True")
+        return
+
+    # Index codebase in background (only in local development)
     index_msg = await cl.Message(content="🔍 Indexing codebase...").send()
 
     try:

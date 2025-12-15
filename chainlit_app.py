@@ -63,8 +63,10 @@ async def start():
     print("[CHAINLIT] Welcome message sent")  # Debug log
 
     # Skip indexing on deployment to avoid startup issues
-    if os.getenv('RENDER'):
-        print("[CHAINLIT] Running on Render - skipping codebase indexing")
+    # Check for Render-specific environment variables or production mode
+    is_production = os.getenv('RENDER_SERVICE_NAME') or os.getenv('RENDER') or os.getenv('PORT')
+    if is_production:
+        print(f"[CHAINLIT] Running in production mode (PORT={os.getenv('PORT')}) - skipping codebase indexing")
         await cl.Message(content="ℹ️ Running in cloud mode - codebase indexing disabled").send()
         cl.user_session.set("orchestrator", Orchestrator(max_iterations=3))
         cl.user_session.set("ready", True)

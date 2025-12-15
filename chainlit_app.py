@@ -28,23 +28,24 @@ if not IS_PRODUCTION:
 from codepilot.agents.orchestrator import Orchestrator
 
 
-@cl.password_auth_callback
-def auth_callback(username: str, password: str):
-    """
-    Simple password authentication for CodePilot.
-
-    For production, use environment variables and proper password hashing.
-    """
-    # Get password from environment variable (more secure)
-    required_password = os.getenv('CHAINLIT_PASSWORD', 'codepilot2024')
-
-    # In production, you should hash passwords and use a proper auth system
-    if password == required_password:
-        return cl.User(
-            identifier=username,
-            metadata={"role": "user", "provider": "credentials"}
-        )
-    return None
+# Authentication disabled for now - uncomment to enable password protection
+# @cl.password_auth_callback
+# def auth_callback(username: str, password: str):
+#     """
+#     Simple password authentication for CodePilot.
+#
+#     For production, use environment variables and proper password hashing.
+#     """
+#     # Get password from environment variable (more secure)
+#     required_password = os.getenv('CHAINLIT_PASSWORD', 'codepilot2024')
+#
+#     # In production, you should hash passwords and use a proper auth system
+#     if password == required_password:
+#         return cl.User(
+#             identifier=username,
+#             metadata={"role": "user", "provider": "credentials"}
+#         )
+#     return None
 
 
 @cl.on_chat_start

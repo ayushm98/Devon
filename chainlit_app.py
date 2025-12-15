@@ -28,6 +28,14 @@ if not IS_PRODUCTION:
 # Import orchestrator (lighter weight)
 from codepilot.agents.orchestrator import Orchestrator
 
+# Import GitHub tools for repo cloning
+from codepilot.tools.github_tools import (
+    extract_github_url,
+    clone_repository,
+    get_repo_info,
+    cleanup_repository
+)
+
 
 # Authentication disabled for now - uncomment to enable password protection
 # @cl.password_auth_callback
@@ -56,33 +64,33 @@ async def start():
     print("[CHAINLIT] on_chat_start triggered")  # Debug log
 
     await cl.Message(
-        content="# 🤖 CodePilot - Autonomous AI Coding Agent\n\n"
+        content="# CodePilot - Autonomous AI Coding Agent\n\n"
                 "I can help you write code, fix bugs, and implement features!\n\n"
-                "**How it works:**\n"
-                "1. 🤔 **Planner** - Searches codebase and creates implementation plan\n"
-                "2. 💻 **Coder** - Writes code locally, uploads to sandbox, runs tests\n"
-                "3. 👁️ **Reviewer** - Reviews tested code and decides approval\n\n"
-                "**What I can do:**\n"
-                "- Write new functions and features\n"
-                "- Fix bugs and add error handling\n"
-                "- Create tests and verify code works\n"
-                "- Search and understand your codebase\n\n"
-                "**Ready!** What would you like me to build?"
+                "**How to use:**\n"
+                "1. Paste a **public GitHub URL** and I'll clone and analyze it\n"
+                "2. Tell me what you want to build or fix\n"
+                "3. Watch my agents (Planner > Coder > Reviewer) work!\n\n"
+                "**Example:**\n"
+                "```\nAnalyze https://github.com/user/repo and add error handling to the API endpoints\n```\n\n"
+                "**Ready!** Paste a GitHub URL or describe your task."
     ).send()
 
     print("[CHAINLIT] Welcome message sent")  # Debug log
 
+    # Initialize session variables
+    cl.user_session.set("repo_path", None)
+    cl.user_session.set("repo_info", None)
+
     # Skip indexing on deployment to avoid startup issues (using module-level constant)
     if IS_PRODUCTION:
         print(f"[CHAINLIT] Running in production mode (PORT={os.getenv('PORT')}) - skipping codebase indexing")
-        await cl.Message(content="ℹ️ Running in cloud mode - codebase indexing disabled").send()
         cl.user_session.set("orchestrator", Orchestrator(max_iterations=3))
         cl.user_session.set("ready", True)
         print("[CHAINLIT] Orchestrator created, ready=True")
         return
 
     # Index codebase in background (only in local development)
-    index_msg = await cl.Message(content="🔍 Indexing codebase...").send()
+    index_msg = await cl.Message(content="Indexing codebase...").send()
 
     try:
         # Get project root
@@ -90,7 +98,7 @@ async def start():
         index_result = index_codebase(project_root)
 
         # Update message content
-        index_msg.content = f"✅ Codebase indexed!\n```\n{index_result}\n```"
+        index_msg.content = f"Codebase indexed!\n```\n{index_result}\n```"
         await index_msg.update()
 
         # Store orchestrator in session (reduced iterations to save API credits)
@@ -99,11 +107,21 @@ async def start():
 
     except Exception as e:
         # Update message content
-        index_msg.content = f"⚠️ Indexing failed (will continue anyway):\n```\n{str(e)}\n```"
+        index_msg.content = f"Indexing failed (will continue anyway):\n```\n{str(e)}\n```"
         await index_msg.update()
         # Still create orchestrator even if indexing fails
         cl.user_session.set("orchestrator", Orchestrator(max_iterations=10))
         cl.user_session.set("ready", True)
+
+
+@cl.on_chat_end
+async def end():
+    """Cleanup when chat ends."""
+    # Clean up any cloned repositories
+    repo_path = cl.user_session.get("repo_path")
+    if repo_path:
+        print(f"[CHAINLIT] Cleaning up repo: {repo_path}")
+        cleanup_repository(repo_path)
 
 
 @cl.on_message
@@ -112,11 +130,74 @@ async def main(message: cl.Message):
 
     # Check if ready
     if not cl.user_session.get("ready"):
-        await cl.Message(content="⚠️ System is still initializing, please wait...").send()
+        await cl.Message(content="System is still initializing, please wait...").send()
         return
 
     # Get orchestrator
     orchestrator: Orchestrator = cl.user_session.get("orchestrator")
+
+    # Check for GitHub URL in message
+    github_url = extract_github_url(message.content)
+    task_context = ""
+
+    if github_url:
+        # Clone the repository
+        clone_msg = await cl.Message(content=f"Cloning repository: `{github_url}`...").send()
+
+        success, result, repo_name = clone_repository(github_url)
+
+        if success:
+            repo_path = result
+            repo_info = get_repo_info(repo_path)
+
+            # Store in session
+            cl.user_session.set("repo_path", repo_path)
+            cl.user_session.set("repo_info", repo_info)
+
+            # Create context for the task
+            languages = ", ".join(repo_info["languages"][:5]) if repo_info["languages"] else "Unknown"
+            task_context = f"""
+[REPOSITORY CONTEXT]
+Repository: {repo_name}
+Path: {repo_path}
+Total Files: {repo_info['total_files']}
+Languages: {languages}
+
+The user wants to work with this repository. Use the path above when reading/writing files.
+"""
+            # Update clone message
+            clone_msg.content = f"**Repository cloned successfully!**\n\n" \
+                               f"- **Name:** {repo_name}\n" \
+                               f"- **Files:** {repo_info['total_files']}\n" \
+                               f"- **Languages:** {languages}\n" \
+                               f"- **Path:** `{repo_path}`"
+            await clone_msg.update()
+
+        else:
+            # Clone failed
+            clone_msg.content = f"**Failed to clone repository**\n\n{result}\n\n" \
+                               f"Make sure the repository is public and the URL is correct."
+            await clone_msg.update()
+            return
+
+    # Check if we have a repo from previous message
+    elif cl.user_session.get("repo_path"):
+        repo_path = cl.user_session.get("repo_path")
+        repo_info = cl.user_session.get("repo_info")
+        if repo_info:
+            languages = ", ".join(repo_info["languages"][:5]) if repo_info["languages"] else "Unknown"
+            task_context = f"""
+[REPOSITORY CONTEXT]
+Repository: {repo_info['name']}
+Path: {repo_path}
+Total Files: {repo_info['total_files']}
+Languages: {languages}
+
+The user is working with this repository. Use the path above when reading/writing files.
+"""
+
+    # Prepare the full task with context
+    full_task = task_context + message.content if task_context else message.content
 
     # Create a message for streaming logs
     log_msg = cl.Message(content="")
@@ -130,10 +211,10 @@ async def main(message: cl.Message):
             """Run orchestrator in thread and capture output."""
             try:
                 with redirect_stdout(captured_output), redirect_stderr(captured_output):
-                    return orchestrator.run(message.content)
+                    return orchestrator.run(full_task)
             except Exception as e:
                 # Capture any exceptions from orchestrator
-                print(f"❌ Error in orchestrator: {str(e)}")
+                print(f"Error in orchestrator: {str(e)}")
                 import traceback
                 traceback.print_exc()
                 raise
@@ -165,10 +246,10 @@ async def main(message: cl.Message):
                 filtered_lines = []
                 for line in accumulated_logs.split('\n'):
                     # Extract token usage before filtering (only count each line once!)
-                    if '📊 Tokens:' in line and line not in seen_token_lines:
+                    if 'Tokens:' in line and line not in seen_token_lines:
                         seen_token_lines.add(line)  # Mark as counted
                         try:
-                            # Parse: "📊 Tokens: 505 prompt + 20 completion = 525 total"
+                            # Parse: "Tokens: 505 prompt + 20 completion = 525 total"
                             parts = line.split('Tokens:')[1].strip()
                             prompt = int(parts.split('prompt')[0].strip())
                             completion = int(parts.split('+')[1].split('completion')[0].strip())
@@ -179,12 +260,13 @@ async def main(message: cl.Message):
                             pass
 
                     # Skip token counts, progress bars, and verbose details
-                    if any(skip in line for skip in ['📊 Tokens:', 'Batches:', '|##', 'it/s]']):
+                    if any(skip in line for skip in ['Tokens:', 'Batches:', '|##', 'it/s]']):
                         continue
                     # Keep important lines
                     if any(keep in line for keep in [
                         '[ORCHESTRATOR]', '[PLANNER]', '[CODER]', '[REVIEWER]',
-                        'Calling tool:', '✅ Tool', 'Transitioning', 'APPROVED', 'REJECTED'
+                        'Calling tool:', 'Tool', 'Transitioning', 'APPROVED', 'REJECTED',
+                        '[GITHUB]', 'Cloning', 'Repository'
                     ]):
                         filtered_lines.append(line)
 
@@ -196,7 +278,7 @@ async def main(message: cl.Message):
                 total_cost = input_cost + output_cost
 
                 # Add usage summary to logs
-                usage_summary = f"\n\n💰 CREDITS USED:\n"
+                usage_summary = f"\n\nCREDITS USED:\n"
                 usage_summary += f"  Input:  {total_prompt_tokens:,} tokens (${input_cost:.4f})\n"
                 usage_summary += f"  Output: {total_completion_tokens:,} tokens (${output_cost:.4f})\n"
                 usage_summary += f"  Total:  {total_tokens:,} tokens (${total_cost:.4f})"
@@ -212,39 +294,39 @@ async def main(message: cl.Message):
         final_logs = captured_output.getvalue()
 
         # Update with final logs
-        log_msg.content = f"## 📋 Execution Log\n```\n{final_logs}\n```"
+        log_msg.content = f"## Execution Log\n```\n{final_logs}\n```"
         await log_msg.update()
 
         # Send results summary
         summary_lines = []
 
         if result.get('plan'):
-            summary_lines.append("## 🤔 Planner")
-            summary_lines.append(f"✅ Plan created ({len(result['plan'])} chars)\n")
+            summary_lines.append("## Planner")
+            summary_lines.append(f"Plan created ({len(result['plan'])} chars)\n")
 
         if result.get('code_changes'):
-            summary_lines.append("## 💻 Coder")
-            summary_lines.append(f"✅ Created {len(result['code_changes'])} file(s):")
+            summary_lines.append("## Coder")
+            summary_lines.append(f"Created {len(result['code_changes'])} file(s):")
             for file_path in result['code_changes'].keys():
                 summary_lines.append(f"  - {file_path}")
             summary_lines.append("")
 
         if result.get('review_feedback'):
-            summary_lines.append("## 👁️ Reviewer")
+            summary_lines.append("## Reviewer")
             if result.get('success'):
-                summary_lines.append("✅ Code approved")
+                summary_lines.append("Code approved")
             else:
-                summary_lines.append("⚠️ Needs revision")
+                summary_lines.append("Needs revision")
             summary_lines.append("")
 
-        summary_lines.append("## 🎯 Result")
+        summary_lines.append("## Result")
         if result.get('success'):
-            summary_lines.append(f"✅ **Success** (Iterations: {result.get('iterations', 'N/A')})")
+            summary_lines.append(f"**Success** (Iterations: {result.get('iterations', 'N/A')})")
         else:
-            summary_lines.append(f"⚠️ **Incomplete** (Iterations: {result.get('iterations', 'N/A')})")
+            summary_lines.append(f"**Incomplete** (Iterations: {result.get('iterations', 'N/A')})")
 
         # Add final cost summary
-        summary_lines.append("\n## 💰 API Credits Used (GPT-3.5-Turbo)")
+        summary_lines.append("\n## API Credits Used (GPT-3.5-Turbo)")
         summary_lines.append(f"**Total Tokens:** {total_tokens:,}")
         summary_lines.append(f"- Input: {total_prompt_tokens:,} tokens (${(total_prompt_tokens/1000)*0.0015:.4f})")
         summary_lines.append(f"- Output: {total_completion_tokens:,} tokens (${(total_completion_tokens/1000)*0.002:.4f})")
@@ -258,7 +340,7 @@ async def main(message: cl.Message):
         error_type = type(e).__name__
 
         if "rate_limit" in error_message.lower() or "429" in error_message:
-            user_message = f"""## ⏱️ Rate Limit Reached
+            user_message = f"""## Rate Limit Reached
 
 OpenAI API rate limit exceeded. This happens when too many requests are made in a short time.
 
@@ -273,7 +355,7 @@ OpenAI API rate limit exceeded. This happens when too many requests are made in 
 ```
 """
         elif "insufficient_quota" in error_message.lower():
-            user_message = f"""## 💳 API Credits Exhausted
+            user_message = f"""## API Credits Exhausted
 
 Your OpenAI API credits have been exhausted.
 
@@ -288,7 +370,7 @@ Your OpenAI API credits have been exhausted.
 ```
 """
         elif "api_key" in error_message.lower() or "authentication" in error_message.lower():
-            user_message = f"""## 🔑 API Key Error
+            user_message = f"""## API Key Error
 
 There's an issue with your OpenAI API key.
 
@@ -303,7 +385,7 @@ There's an issue with your OpenAI API key.
 ```
 """
         elif "timeout" in error_message.lower():
-            user_message = f"""## ⏰ Request Timeout
+            user_message = f"""## Request Timeout
 
 The operation took too long and timed out.
 
@@ -319,7 +401,7 @@ The operation took too long and timed out.
 """
         else:
             # Generic error with helpful context
-            user_message = f"""## ❌ Error Occurred
+            user_message = f"""## Error Occurred
 
 An unexpected error occurred during execution.
 

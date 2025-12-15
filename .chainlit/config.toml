@@ -1,5 +1,0 @@
-[project]
-enable_telemetry = false
-
-[UI]
-name = "CodePilot"

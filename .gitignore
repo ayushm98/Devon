@@ -36,3 +36,9 @@ examples/
 .claude/
 CLAUDE.md
 devon-project-plan.md
+
+# Chainlit config (auto-generated)
+.chainlit/
+
+# CodePilot cache
+.codepilot_cache/
